@@ -2,7 +2,7 @@ import { apiClient } from './client';
 
 export const getBookings = async () => {
   const response = await apiClient.get('/bookings');
-  return response.data;
+  return response.data.data || response.data;
 };
 
 export const getBookingById = async (id: string) => {

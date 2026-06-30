@@ -2,7 +2,7 @@ import { apiClient } from './client';
 
 export const getUsers = async () => {
   const response = await apiClient.get('/users');
-  return response.data;
+  return response.data.data || response.data;
 };
 
 export const updateUserRole = async (userId: string, role: string) => {
