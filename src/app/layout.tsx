@@ -1,23 +1,12 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import { Outfit } from 'next/font/google';
+import './globals.css';
+import "flatpickr/dist/flatpickr.css";
+import { SidebarProvider } from '@/context/SidebarContext';
+import { ThemeProvider } from '@/context/ThemeContext';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const outfit = Outfit({
   subsets: ["latin"],
 });
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-import { Toaster } from "sonner";
-
-export const metadata: Metadata = {
-  title: "Pink Lotus - Admin Dashboard",
-  description: "Admin dashboard for Pink Lotus Residences",
-};
 
 export default function RootLayout({
   children,
@@ -25,13 +14,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
-        {children}
-        <Toaster position="top-center" richColors />
+    <html lang="en">
+      <body className={`${outfit.className} dark:bg-gray-900`}>
+        <ThemeProvider>
+          <SidebarProvider>{children}</SidebarProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
