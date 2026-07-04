@@ -102,3 +102,12 @@ export const useDeleteRoomImageMutation = (options: any = {}) => {
     onSuccess: (d: any, v: any, c: any) => { qc.invalidateQueries({ queryKey: ["Rooms"] }); options.onSuccess?.(d, v, c); },
   });
 };
+
+export const useUploadImageMutation = (options: any = {}) => {
+  return useMutation<any, any, any>({
+    mutationFn: async (formData: FormData) => (await api.post("/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" }
+    })).data,
+    ...options,
+  });
+};

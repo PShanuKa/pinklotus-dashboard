@@ -13,8 +13,8 @@ export default function SignInForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("admin@gmail.com");
+  const [password, setPassword] = useState("admin1234");
   const [error, setError] = useState("");
 
   const loginMutation = useLoginMutation({
@@ -71,7 +71,7 @@ export default function SignInForm() {
                   <Input
                     placeholder="info@gmail.com"
                     type="email"
-                    value={email}
+                    value={String(email)}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
@@ -83,7 +83,7 @@ export default function SignInForm() {
                     <Input
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
-                      value={password}
+                      value={String(password)}
                       onChange={(e) => setPassword(e.target.value)}
                     />
                     <span

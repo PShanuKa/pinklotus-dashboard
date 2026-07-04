@@ -2,8 +2,7 @@
 import React, { useState, KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useCreateRoomMutation } from "../../../../../services/roomsApi";
-import { useApartmentsQuery } from "../../../../../services/roomsApi";
+import { useCreateRoomMutation, useApartmentsQuery, useUploadImageMutation } from "../../../../../services/roomsApi";
 
 // ── Reusable tag-list input ─────────────────────────────────────
 function TagListInput({
@@ -95,6 +94,26 @@ function ImageUrlInput({
 
   const remove = (idx: number) => onChange(images.filter((_, i) => i !== idx));
 
+  const uploadMutation = useUploadImageMutation({
+    onSuccess: (data: any) => {
+      if (data.url) {
+        onChange([...images, data.url]);
+      }
+    },
+    onError: (err: any) => {
+      alert("Failed to upload image: " + (err.response?.data?.message || err.message));
+    }
+  });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const formData = new FormData();
+      formData.append("file", file);
+      uploadMutation.mutate(formData);
+    }
+  };
+
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Images</label>
@@ -103,10 +122,30 @@ function ImageUrlInput({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKey}
-          placeholder="https://res.cloudinary.com/..."
+          placeholder="https://res.cloudinary.com/... or upload image"
           className="flex-1 px-3.5 py-2.5 border border-gray-300 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
         />
         <button type="button" onClick={add} className="px-4 py-2.5 text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 rounded-xl transition-colors">Add</button>
+        <div className="relative">
+          <input 
+            type="file" 
+            accept="image/*" 
+            onChange={handleFileChange} 
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            disabled={uploadMutation.isPending}
+          />
+          <button 
+            type="button" 
+            className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-xl transition-colors whitespace-nowrap flex items-center gap-2"
+          >
+            {uploadMutation.isPending ? (
+              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+            )}
+            Upload File
+          </button>
+        </div>
       </div>
       {images.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

@@ -9,6 +9,8 @@ interface ButtonProps {
   onClick?: () => void; // Click handler
   disabled?: boolean; // Disabled state
   className?: string; // Disabled state
+  type?: "button" | "submit" | "reset"; // Button type
+
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -17,6 +19,7 @@ const Button: React.FC<ButtonProps> = ({
   variant = "primary",
   startIcon,
   endIcon,
+  type,
   onClick,
   className = "",
   disabled = false,
@@ -43,6 +46,7 @@ const Button: React.FC<ButtonProps> = ({
         disabled ? "cursor-not-allowed opacity-50" : ""
       }`}
       onClick={onClick}
+      type={type}
       disabled={disabled}
     >
       {startIcon && <span className="flex items-center">{startIcon}</span>}

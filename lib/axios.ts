@@ -35,6 +35,12 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    // Skip interceptor logic entirely for login routes
+    if (originalRequest.url?.includes("/login") || originalRequest.url?.includes("/auth/login")) {
+      return Promise.reject(error);
+    }
+
     let errorMessage =  error.response?.data?.error;
 
     if (error.response?.data instanceof Blob) {
@@ -88,20 +94,25 @@ api.interceptors.response.use(
 
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
-          window.location.href = "/signin";
+          localStorage.removeItem("user");
+          window.location.href = "/login";
           return Promise.reject(refreshError);
         }
       } else {
         isRefreshing = false;
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
-        window.location.href = "/signin";
+        localStorage.removeItem("user");
+        window.location.href = "/login";
       }
     }
     
     // For other 401 errors (not expired), just logout if no token
-    if (error.response?.status === 401 && !localStorage.getItem("accessToken")) {
+    if (error.response?.status === 401) {
       window.location.href = "/login";
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
     }
 
     return Promise.reject(error);

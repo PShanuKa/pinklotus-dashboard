@@ -17,6 +17,21 @@ export const useLoginMutation = (options: any = {}) => {
   });
 };
 
+// ── Get My Profile ──────────────────────────────────────────────────
+export const useGetMyProfile = (options: any = {}) => {
+  return useQuery<any>({
+    queryKey: ["MyProfile"],
+    queryFn: async () => {
+      const response = await api.get("/auth/me");
+      if (response.data.user) {
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+      }
+      return response.data.user;
+    },
+    ...options,
+  });
+};
+
 // ── System Users ─────────────────────────────────────────────────
 export const useUsersQuery = (options: any = {}) => {
   return useQuery({
