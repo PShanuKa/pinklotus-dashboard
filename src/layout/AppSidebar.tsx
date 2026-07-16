@@ -43,6 +43,16 @@ const navItems: NavItem[] = [
     path: "/profile",
   },
   {
+    icon: <ListIcon />,
+    name: "Online Bookings",
+    path: "/online-bookings",
+  },
+  {
+    icon: <BoxCubeIcon />,
+    name: "Hotel POS",
+    path: "/pos",
+  },
+  {
     icon: <UserCircleIcon />,
     name: "System Users",
     path: "/system-users",
