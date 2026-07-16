@@ -9,6 +9,7 @@ import {
   useQuickCreateCustomerMutation,
 } from "../../../../services/bookingsApi";
 import { useCustomersQuery } from "../../../../services/userApi";
+import DatePicker from "@/components/form/date-picker";
 
 // ── Types ──────────────────────────────────────────────────────
 type RoomStatus = "AVAILABLE" | "OCCUPIED" | "MAINTENANCE";
@@ -429,12 +430,20 @@ function WalkInBookingModal({ room, customers, onClose, onSubmit, onQuickCreateC
             {/* Dates */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Check-in</label>
-                <input type="date" required value={formData.checkIn} min={new Date().toISOString().split("T")[0]} onChange={(e) => setFormData({ ...formData, checkIn: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800" />
+                <DatePicker
+                  id="checkInDate"
+                  label="Check-in"
+                  defaultDate={formData.checkIn}
+                  onChange={(_, dateStr) => setFormData({ ...formData, checkIn: dateStr })}
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Check-out</label>
-                <input type="date" required value={formData.checkOut} min={formData.checkIn || new Date().toISOString().split("T")[0]} onChange={(e) => setFormData({ ...formData, checkOut: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800" />
+                <DatePicker
+                  id="checkOutDate"
+                  label="Check-out"
+                  defaultDate={formData.checkOut}
+                  onChange={(_, dateStr) => setFormData({ ...formData, checkOut: dateStr })}
+                />
               </div>
             </div>
 
