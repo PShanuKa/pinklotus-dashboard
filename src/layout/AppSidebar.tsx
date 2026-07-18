@@ -47,6 +47,11 @@ const navItems: NavItem[] = [
     path: "/online-bookings",
   },
   {
+    icon: <FiMail />,
+    name: "Inquiries",
+    path: "/inquiries",
+  },
+  {
     icon: <BoxCubeIcon />,
     name: "Hotel POS",
     path: "/pos",
