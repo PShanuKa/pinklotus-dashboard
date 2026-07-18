@@ -17,6 +17,7 @@ import {
   TableIcon,
   UserCircleIcon,
 } from "../icons/index";
+import { FiMail } from "react-icons/fi";
 
 type NavItem = {
   name: string;
@@ -47,7 +48,7 @@ const navItems: NavItem[] = [
     path: "/online-bookings",
   },
   {
-    icon: <FiMail />,
+    icon: <FiMail size={20}/>,
     name: "Inquiries",
     path: "/inquiries",
   },

@@ -1,10 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import PageMeta from "@/components/common/PageMeta";
-import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import { useInquiriesQuery, useMarkInquiryReadMutation, useDeleteInquiryMutation } from "../../../../services/inquiriesApi";
-import { format } from "date-fns";
 import { FiCheck, FiTrash2, FiMail } from "react-icons/fi";
 
 export default function InquiriesPage() {
@@ -18,11 +15,9 @@ export default function InquiriesPage() {
 
   return (
     <div className="p-6">
-      <PageMeta
-        title="Inquiries | Pink Lotus Residences"
-        description="Manage contact form inquiries"
-      />
-      <PageBreadcrumb pageTitle="Contact Inquiries" />
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Contact Inquiries</h1>
+      </div>
 
       <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
         <div className="p-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
@@ -71,7 +66,7 @@ export default function InquiriesPage() {
                       {inquiry.message}
                     </td>
                     <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
-                      {format(new Date(inquiry.createdAt), "MMM d, yyyy h:mm a")}
+                      {new Date(inquiry.createdAt).toLocaleString()}
                     </td>
                     <td className="p-4">
                       {inquiry.isRead ? (
