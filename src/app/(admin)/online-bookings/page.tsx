@@ -11,6 +11,8 @@ import {
 } from "../../../../services/paymentsApi";
 import { useRoomsQuery } from "../../../../services/roomsApi";
 import DatePicker from "@/components/form/date-picker";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 type BookingStatus = "PENDING" | "CONFIRMED" | "CHECKED_IN" | "CHECKED_OUT" | "CANCELLED" | "NO_SHOW";
 type BookingSource = "ONLINE" | "DASHBOARD";
@@ -478,11 +480,14 @@ function BookingSlideOver({ booking, onClose, onAction, isUpdating }: { booking:
   );
 }
 
-// ── Main Page ──────────────────────────────────────────────────
-export default function OnlineBookingsPage() {
+// ── Main Page Content ───────────────────────────────────────────────
+function OnlineBookingsContent() {
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get("search") || "";
+
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [sourceFilter, setSourceFilter] = useState<string>("ALL");
   const [dateFrom, setDateFrom] = useState("");
@@ -720,5 +725,13 @@ export default function OnlineBookingsPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function OnlineBookingsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-gray-500">Loading bookings...</div>}>
+      <OnlineBookingsContent />
+    </Suspense>
   );
 }
