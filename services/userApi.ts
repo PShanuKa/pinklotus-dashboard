@@ -33,11 +33,20 @@ export const useGetMyProfile = (options: any = {}) => {
 };
 
 // ── System Users ─────────────────────────────────────────────────
-export const useUsersQuery = (options: any = {}) => {
+export const useUsersQuery = (
+  filters: { page?: number; limit?: number; search?: string; role?: string } = {},
+  options: any = {}
+) => {
   return useQuery({
-    queryKey: ["SystemUsers"],
+    queryKey: ["SystemUsers", filters],
     queryFn: async () => {
-      const response = await api.get("/auth/users");
+      const params = new URLSearchParams();
+      if (filters.page) params.append("page", String(filters.page));
+      if (filters.limit) params.append("limit", String(filters.limit));
+      if (filters.search) params.append("search", filters.search);
+      if (filters.role && filters.role !== "ALL") params.append("role", filters.role);
+      
+      const response = await api.get(`/auth/users?${params.toString()}`);
       return response.data;
     },
     ...options,

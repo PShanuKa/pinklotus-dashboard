@@ -262,18 +262,36 @@ export default function SystemUsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("ALL");
+  const [page, setPage] = useState(1);
 
-  const { data, isLoading, error } = useUsersQuery();
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [roleFilter]);
+
+  const { data, isLoading, error } = useUsersQuery({
+    page,
+    limit: 20,
+    search: debouncedSearch,
+    role: roleFilter,
+  });
+
   const deleteMutation = useDeleteUserMutation({
     onSuccess: () => setDeleteTarget(null),
   });
 
   const users: User[] = data?.users ?? [];
-  const filtered = users.filter(
-    (u) =>
-      u.fullname.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const totalItems = data?.total ?? 0;
+  const totalPages = Math.ceil(totalItems / 20);
 
   const openAdd = () => { setSelectedUser(null); setModalMode("add"); };
   const openEdit = (u: User) => { setSelectedUser(u); setModalMode("edit"); };
@@ -304,8 +322,9 @@ export default function SystemUsersPage() {
       {/* Card */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
         {/* Search bar */}
-        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-          <div className="relative max-w-xs">
+        {/* Search & Filters */}
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[200px] max-w-xs">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -317,6 +336,24 @@ export default function SystemUsersPage() {
               className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
+          
+          <div className="w-40">
+            <select
+              className="w-full py-2 px-3 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 appearance-none"
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+            >
+              <option value="ALL">All Roles</option>
+              <option value="ADMIN">Admin</option>
+              <option value="MANAGER">Manager</option>
+            </select>
+          </div>
+
+          {(search || roleFilter !== "ALL") && (
+            <button onClick={() => { setSearch(""); setRoleFilter("ALL"); }} className="text-xs text-brand-500 hover:underline">
+              Clear
+            </button>
+          )}
         </div>
 
         {/* Table */}
@@ -347,14 +384,14 @@ export default function SystemUsersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {filtered.length === 0 ? (
+                {users.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-400 dark:text-gray-500">
                       No users found.
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((user, idx) => (
+                  users.map((user, idx) => (
                     <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
                       <td className="px-6 py-4 text-gray-400 dark:text-gray-500">{idx + 1}</td>
                       <td className="px-6 py-4">
@@ -409,10 +446,30 @@ export default function SystemUsersPage() {
           )}
         </div>
 
-        {/* Footer count */}
+        {/* Footer count & Pagination */}
         {!isLoading && !error && (
-          <div className="px-6 py-3 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-400 dark:text-gray-500">
-            Showing {filtered.length} of {users.length} users
+          <div className="px-6 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
+            <div>
+              Showing {users.length} of {totalItems} users
+            </div>
+            {totalPages > 1 && (
+              <div className="flex gap-2">
+                <button
+                  disabled={page <= 1}
+                  onClick={() => setPage(p => p - 1)}
+                  className="px-3 py-1 border border-gray-200 dark:border-gray-700 rounded-lg disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  Previous
+                </button>
+                <button
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(p => p + 1)}
+                  className="px-3 py-1 border border-gray-200 dark:border-gray-700 rounded-lg disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

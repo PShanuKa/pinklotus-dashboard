@@ -6,9 +6,10 @@ import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import Image from "next/image";
-
+import { useGetMyProfile } from "../../../services/userApi";
 
 export default function UserMetaCard() {
+  const { data: user, isLoading } = useGetMyProfile();
   const { isOpen, openModal, closeModal } = useModal();
   const handleSave = () => {
     // Handle save logic here
@@ -29,16 +30,24 @@ export default function UserMetaCard() {
               />
             </div>
             <div className="order-3 xl:order-2">
-              <h4 className="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left">
-                Musharof Chowdhury
-              </h4>
+              {isLoading ? (
+                <div className="h-6 w-32 bg-gray-200 dark:bg-gray-700 animate-pulse rounded mb-2"></div>
+              ) : (
+                <h4 className="mb-2 text-lg font-semibold text-center text-gray-800 dark:text-white/90 xl:text-left">
+                  {user?.fullname || "Unknown User"}
+                </h4>
+              )}
               <div className="flex flex-col items-center gap-1 text-center xl:flex-row xl:gap-3 xl:text-left">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Team Manager
-                </p>
+                {isLoading ? (
+                  <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"></div>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {user?.role === "ADMIN" ? "Administrator" : "Manager"}
+                  </p>
+                )}
                 <div className="hidden h-3.5 w-px bg-gray-300 dark:bg-gray-700 xl:block"></div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Arizona, United States
+                  PinkLotus Team
                 </p>
               </div>
             </div>

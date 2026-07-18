@@ -2,11 +2,22 @@ import api from "../lib/axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // ── Online Bookings (source=ONLINE) ───────────────────────────
-export const useOnlineBookingsQuery = (options: any = {}) => {
+export const useOnlineBookingsQuery = (
+  filters: { page?: number; limit?: number; search?: string; from?: string; to?: string; roomId?: string; status?: string } = {},
+  options: any = {}
+) => {
   return useQuery({
-    queryKey: ["OnlineBookings"],
+    queryKey: ["OnlineBookings", filters],
     queryFn: async () => {
-      const response = await api.get("/bookings?source=ONLINE&limit=100");
+      const params = new URLSearchParams({ source: "ONLINE", limit: String(filters.limit || 20) });
+      if (filters.page) params.append("page", String(filters.page));
+      if (filters.search) params.append("search", filters.search);
+      if (filters.from) params.append("from", filters.from);
+      if (filters.to) params.append("to", filters.to);
+      if (filters.roomId) params.append("roomId", filters.roomId);
+      if (filters.status && filters.status !== "ALL") params.append("status", filters.status);
+      
+      const response = await api.get(`/bookings?${params.toString()}`);
       return response.data;
     },
     refetchInterval: 30000, // Auto-refresh every 30s

@@ -5,6 +5,8 @@ import {
   useOnlineBookingsQuery,
   useUpdateBookingMutation,
 } from "../../../../services/bookingsApi";
+import { useRoomsQuery } from "../../../../services/roomsApi";
+import DatePicker from "@/components/form/date-picker";
 
 type BookingStatus = "PENDING" | "CONFIRMED" | "CHECKED_IN" | "CHECKED_OUT" | "CANCELLED" | "NO_SHOW";
 
@@ -204,12 +206,37 @@ function BookingSlideOver({ booking, onClose, onAction, isUpdating }: { booking:
 export default function OnlineBookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [roomIdFilter, setRoomIdFilter] = useState("");
+  const [page, setPage] = useState(1);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
-  const { data, isLoading, error } = useOnlineBookingsQuery();
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [statusFilter, dateFrom, dateTo, roomIdFilter]);
+
+  const { data: roomsData } = useRoomsQuery();
+  const { data, isLoading, error } = useOnlineBookingsQuery({
+    page,
+    limit: 20,
+    search: debouncedSearch,
+    status: statusFilter,
+    from: dateFrom,
+    to: dateTo,
+    roomId: roomIdFilter,
+  });
+
   const updateMutation = useUpdateBookingMutation();
 
   const handleStatusAction = (bookingId: string, newStatus: BookingStatus) => {
@@ -223,24 +250,9 @@ export default function OnlineBookingsPage() {
   };
 
   const bookings: Booking[] = data?.bookings ?? [];
-  const filtered = bookings.filter((b) => {
-    const matchSearch =
-      b.bookingCode.toLowerCase().includes(search.toLowerCase()) ||
-      b.customer.fullname.toLowerCase().includes(search.toLowerCase()) ||
-      b.room.name.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "ALL" || b.status === statusFilter;
-    const matchDateFrom = !dateFrom || new Date(b.checkIn) >= new Date(dateFrom);
-    const matchDateTo = !dateTo || new Date(b.checkIn) <= new Date(dateTo);
-    return matchSearch && matchStatus && matchDateFrom && matchDateTo;
-  });
-
-  const counts = {
-    ALL: bookings.length,
-    PENDING: bookings.filter((b) => b.status === "PENDING").length,
-    CONFIRMED: bookings.filter((b) => b.status === "CONFIRMED").length,
-    CHECKED_IN: bookings.filter((b) => b.status === "CHECKED_IN").length,
-    CANCELLED: bookings.filter((b) => b.status === "CANCELLED").length,
-  };
+  const counts = data?.counts ?? { ALL: 0, PENDING: 0, CONFIRMED: 0, CHECKED_IN: 0, CANCELLED: 0 };
+  const totalItems = data?.total ?? 0;
+  const totalPages = Math.ceil(totalItems / 20);
 
   return (
     <div className="space-y-6">
@@ -266,7 +278,7 @@ export default function OnlineBookingsPage() {
                 : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-brand-300"
             }`}
           >
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{counts[s]}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{counts[s] || 0}</p>
             <p className={`text-xs font-medium mt-0.5 ${statusFilter === s ? "text-brand-600 dark:text-brand-400" : "text-gray-500 dark:text-gray-400"}`}>
               {s === "ALL" ? "Total" : s.replace("_", " ").charAt(0) + s.replace("_", " ").slice(1).toLowerCase()}
             </p>
@@ -275,8 +287,8 @@ export default function OnlineBookingsPage() {
       </div>
 
       {/* Table card */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
-        {/* Search + Date filters */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm">
+        {/* Search + Filters */}
         <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex flex-wrap gap-3 items-center">
           <div className="relative flex-1 min-w-[200px] max-w-xs">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -290,13 +302,37 @@ export default function OnlineBookingsPage() {
               className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-400 text-xs">From</span>
-            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="px-2 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white" />
-            <span className="text-gray-400 text-xs">To</span>
-            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="px-2 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white" />
-            {(dateFrom || dateTo) && (
-              <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="text-xs text-brand-500 hover:underline">Clear</button>
+          
+          <div className="w-48">
+            <select
+              className="w-full py-2 px-3 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 appearance-none"
+              value={roomIdFilter}
+              onChange={(e) => setRoomIdFilter(e.target.value)}
+            >
+              <option value="">All Rooms</option>
+              {roomsData?.rooms?.map((r: any) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm">
+            <div className="w-40 relative z-50">
+              <DatePicker
+                id="dateFrom"
+                placeholder="From Date"
+                onChange={(_, dateStr) => setDateFrom(dateStr as string)}
+              />
+            </div>
+            <div className="w-40 relative z-50">
+              <DatePicker
+                id="dateTo"
+                placeholder="To Date"
+                onChange={(_, dateStr) => setDateTo(dateStr as string)}
+              />
+            </div>
+            {(dateFrom || dateTo || roomIdFilter || search) && (
+              <button onClick={() => { setDateFrom(""); setDateTo(""); setRoomIdFilter(""); setSearch(""); }} className="text-xs text-brand-500 hover:underline">Clear</button>
             )}
           </div>
         </div>
@@ -321,12 +357,12 @@ export default function OnlineBookingsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {filtered.length === 0 ? (
+                {bookings.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-400 dark:text-gray-500">No bookings found.</td>
                   </tr>
                 ) : (
-                  filtered.map((booking) => (
+                  bookings.map((booking) => (
                     <tr key={booking.id} onClick={() => setSelectedBooking(booking)} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors cursor-pointer">
                       <td className="px-6 py-4 font-medium text-brand-600 dark:text-brand-400">{booking.bookingCode}</td>
                       <td className="px-6 py-4">
@@ -354,10 +390,30 @@ export default function OnlineBookingsPage() {
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer with Pagination */}
         {!isLoading && !error && (
-          <div className="px-6 py-3 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-400 dark:text-gray-500">
-            Showing {filtered.length} of {bookings.length} bookings
+          <div className="px-6 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
+            <div>
+              Showing {bookings.length} of {totalItems} bookings
+            </div>
+            {totalPages > 1 && (
+              <div className="flex gap-2">
+                <button
+                  disabled={page <= 1}
+                  onClick={() => setPage(p => p - 1)}
+                  className="px-3 py-1 border border-gray-200 dark:border-gray-700 rounded-lg disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  Previous
+                </button>
+                <button
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(p => p + 1)}
+                  className="px-3 py-1 border border-gray-200 dark:border-gray-700 rounded-lg disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
