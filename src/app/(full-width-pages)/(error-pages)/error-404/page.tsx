@@ -5,9 +5,9 @@ import Link from "next/link";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "Next.js Error 404 | TailAdmin - Next.js Dashboard Template",
+  title: "Next.js Error 404 | PinkLotus - Next.js Dashboard Template",
   description:
-    "This is Next.js Error 404 page for TailAdmin - Next.js Tailwind CSS Admin Dashboard Template",
+    "This is Next.js Error 404 page for PinkLotus - Next.js Tailwind CSS Admin Dashboard Template",
 };
 
 export default function Error404() {
@@ -35,7 +35,7 @@ export default function Error404() {
         />
 
         <p className="mt-10 mb-6 text-base text-gray-700 dark:text-gray-400 sm:text-lg">
-          We can’t seem to find the page you are looking for!
+          We canâ€™t seem to find the page you are looking for!
         </p>
 
         <Link
@@ -47,7 +47,7 @@ export default function Error404() {
       </div>
       {/* <!-- Footer --> */}
       <p className="absolute text-sm text-center text-gray-500 -translate-x-1/2 bottom-6 left-1/2 dark:text-gray-400">
-        &copy; {new Date().getFullYear()} - TailAdmin
+        &copy; {new Date().getFullYear()} - PinkLotus
       </p>
     </div>
   );

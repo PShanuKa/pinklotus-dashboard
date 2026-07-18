@@ -17,7 +17,6 @@ import {
   TableIcon,
   UserCircleIcon,
 } from "../icons/index";
-import SidebarWidget from "./SidebarWidget";
 
 type NavItem = {
   name: string;
@@ -119,7 +118,6 @@ const othersItems: NavItem[] = [
     name: "Authentication",
     subItems: [
       { name: "Sign In", path: "/signin", pro: false },
-      { name: "Sign Up", path: "/signup", pro: false },
     ],
   },
 ];
@@ -404,7 +402,6 @@ const AppSidebar: React.FC = () => {
             </div>
           </div>
         </nav>
-        {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}
       </div>
     </aside>
   );
