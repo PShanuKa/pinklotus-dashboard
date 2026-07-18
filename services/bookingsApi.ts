@@ -1,26 +1,27 @@
 import api from "../lib/axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-// ── Online Bookings (source=ONLINE) ───────────────────────────
+// ── All Bookings (unified — source can be ONLINE, DASHBOARD, or ALL) ─
 export const useOnlineBookingsQuery = (
-  filters: { page?: number; limit?: number; search?: string; from?: string; to?: string; roomId?: string; status?: string } = {},
+  filters: { page?: number; limit?: number; search?: string; from?: string; to?: string; roomId?: string; status?: string; source?: string } = {},
   options: any = {}
 ) => {
   return useQuery({
     queryKey: ["OnlineBookings", filters],
     queryFn: async () => {
-      const params = new URLSearchParams({ source: "ONLINE", limit: String(filters.limit || 20) });
+      const params = new URLSearchParams({ limit: String(filters.limit || 20) });
       if (filters.page) params.append("page", String(filters.page));
       if (filters.search) params.append("search", filters.search);
       if (filters.from) params.append("from", filters.from);
       if (filters.to) params.append("to", filters.to);
       if (filters.roomId) params.append("roomId", filters.roomId);
       if (filters.status && filters.status !== "ALL") params.append("status", filters.status);
+      if (filters.source && filters.source !== "ALL") params.append("source", filters.source);
       
       const response = await api.get(`/bookings?${params.toString()}`);
       return response.data;
     },
-    refetchInterval: 30000, // Auto-refresh every 30s
+    refetchInterval: 30000,
     ...options,
   });
 };

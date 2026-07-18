@@ -36,14 +36,14 @@ const navItems: NavItem[] = [
   //   name: "Calendar",
   //   path: "/calendar",
   // },
-  {
-    icon: <UserCircleIcon />,
-    name: "User Profile",
-    path: "/profile",
-  },
+  // {
+  //   icon: <UserCircleIcon />,
+  //   name: "User Profile",
+  //   path: "/profile",
+  // },
   {
     icon: <ListIcon />,
-    name: "Online Bookings",
+    name: "All Bookings",
     path: "/online-bookings",
   },
   {

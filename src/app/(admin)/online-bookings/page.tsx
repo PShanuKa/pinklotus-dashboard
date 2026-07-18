@@ -9,6 +9,7 @@ import { useRoomsQuery } from "../../../../services/roomsApi";
 import DatePicker from "@/components/form/date-picker";
 
 type BookingStatus = "PENDING" | "CONFIRMED" | "CHECKED_IN" | "CHECKED_OUT" | "CANCELLED" | "NO_SHOW";
+type BookingSource = "ONLINE" | "DASHBOARD";
 
 type Booking = {
   id: string;
@@ -20,6 +21,7 @@ type Booking = {
   guests: number;
   totalAmount: string;
   status: BookingStatus;
+  source: BookingSource;
   createdAt: string;
   specialRequest: string | null;
 };
@@ -36,6 +38,22 @@ function Toast({ message, type, onClose }: { message: string; type: "success" | 
       <span>{message}</span>
       <button onClick={onClose} className="ml-2 opacity-70 hover:opacity-100">✕</button>
     </div>
+  );
+}
+
+// ── Source Badge ────────────────────────────────────
+function SourceBadge({ source }: { source: BookingSource }) {
+  if (source === "ONLINE") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+        🌐 Online
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+      🏨 Walk-in
+    </span>
   );
 }
 
@@ -85,6 +103,86 @@ function StatusActions({ booking, onAction }: { booking: Booking; onAction: (sta
 // ── Booking Detail Slide-over ──────────────────────────────────
 function BookingSlideOver({ booking, onClose, onAction, isUpdating }: { booking: Booking; onClose: () => void; onAction: (status: BookingStatus) => void; isUpdating: boolean }) {
   const nights = Math.ceil((new Date(booking.checkOut).getTime() - new Date(booking.checkIn).getTime()) / (1000 * 60 * 60 * 24));
+  
+  const handlePrint = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    
+    const html = `
+      <html>
+        <head>
+          <title>Booking Receipt - ${booking.bookingCode}</title>
+          <style>
+            body { font-family: system-ui, -apple-system, sans-serif; padding: 20px; color: #333; max-width: 400px; margin: 0 auto; }
+            .header { text-align: center; margin-bottom: 20px; border-bottom: 1px dashed #ccc; padding-bottom: 10px; }
+            .header h1 { margin: 0; font-size: 20px; }
+            .header p { margin: 5px 0 0; color: #666; font-size: 12px; }
+            .row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+            .row.total { font-weight: bold; font-size: 16px; border-top: 1px dashed #ccc; padding-top: 10px; margin-top: 10px; }
+            .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #888; }
+            @media print {
+              body { padding: 0; }
+              @page { margin: 0; size: auto; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>PinkLotus Hotel</h1>
+            <p>Booking Receipt</p>
+            <p style="font-family: monospace;">${booking.bookingCode}</p>
+          </div>
+          
+          <div class="row">
+            <span>Customer:</span>
+            <span>${booking.customer.fullname}</span>
+          </div>
+          <div class="row">
+            <span>Room:</span>
+            <span>${booking.room.name}</span>
+          </div>
+          <div class="row">
+            <span>Check In:</span>
+            <span>${new Date(booking.checkIn).toLocaleDateString()}</span>
+          </div>
+          <div class="row">
+            <span>Check Out:</span>
+            <span>${new Date(booking.checkOut).toLocaleDateString()}</span>
+          </div>
+          <div class="row">
+            <span>Nights:</span>
+            <span>${nights}</span>
+          </div>
+          <div class="row">
+            <span>Guests:</span>
+            <span>${booking.guests}</span>
+          </div>
+          <div class="row">
+            <span>Status:</span>
+            <span>${booking.status.replace("_", " ")}</span>
+          </div>
+          
+          <div class="row total">
+            <span>Total Amount:</span>
+            <span>$${booking.totalAmount}</span>
+          </div>
+          
+          <div class="footer">
+            <p>Thank you for choosing PinkLotus!</p>
+            <p>${new Date().toLocaleString()}</p>
+          </div>
+          
+          <script>
+            window.onload = () => { window.print(); window.close(); }
+          </script>
+        </body>
+      </html>
+    `;
+    
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
@@ -94,7 +192,14 @@ function BookingSlideOver({ booking, onClose, onAction, isUpdating }: { booking:
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">Booking Details</h2>
             <p className="text-xs text-brand-500 font-mono">{booking.bookingCode}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+          <div className="flex items-center gap-3">
+            <button onClick={handlePrint} className="p-2 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-lg transition-colors" title="Print Receipt">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+            </button>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+          </div>
         </div>
         <div className="p-5 space-y-5">
           {/* Status */}
@@ -208,6 +313,7 @@ export default function OnlineBookingsPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [sourceFilter, setSourceFilter] = useState<string>("ALL");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [roomIdFilter, setRoomIdFilter] = useState("");
@@ -224,7 +330,7 @@ export default function OnlineBookingsPage() {
 
   React.useEffect(() => {
     setPage(1);
-  }, [statusFilter, dateFrom, dateTo, roomIdFilter]);
+  }, [statusFilter, sourceFilter, dateFrom, dateTo, roomIdFilter]);
 
   const { data: roomsData } = useRoomsQuery();
   const { data, isLoading, error } = useOnlineBookingsQuery({
@@ -232,6 +338,7 @@ export default function OnlineBookingsPage() {
     limit: 20,
     search: debouncedSearch,
     status: statusFilter,
+    source: sourceFilter,
     from: dateFrom,
     to: dateTo,
     roomId: roomIdFilter,
@@ -261,8 +368,8 @@ export default function OnlineBookingsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Online Bookings</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage booking requests from the website</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">All Bookings</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Online reservations and walk-in (POS) bookings</p>
         </div>
       </div>
 
@@ -303,6 +410,18 @@ export default function OnlineBookingsPage() {
             />
           </div>
           
+          <div className="w-40">
+            <select
+              className="w-full py-2 px-3 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 appearance-none"
+              value={sourceFilter}
+              onChange={(e) => { setSourceFilter(e.target.value); }}
+            >
+              <option value="ALL">All Sources</option>
+              <option value="ONLINE">🌐 Online</option>
+              <option value="DASHBOARD">🏨 Walk-in (POS)</option>
+            </select>
+          </div>
+
           <div className="w-48">
             <select
               className="w-full py-2 px-3 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 appearance-none"
@@ -331,8 +450,8 @@ export default function OnlineBookingsPage() {
                 onChange={(_, dateStr) => setDateTo(dateStr as string)}
               />
             </div>
-            {(dateFrom || dateTo || roomIdFilter || search) && (
-              <button onClick={() => { setDateFrom(""); setDateTo(""); setRoomIdFilter(""); setSearch(""); }} className="text-xs text-brand-500 hover:underline">Clear</button>
+            {(dateFrom || dateTo || roomIdFilter || search || sourceFilter !== "ALL") && (
+              <button onClick={() => { setDateFrom(""); setDateTo(""); setRoomIdFilter(""); setSearch(""); setSourceFilter("ALL"); }} className="text-xs text-brand-500 hover:underline">Clear</button>
             )}
           </div>
         </div>
@@ -348,6 +467,7 @@ export default function OnlineBookingsPage() {
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
                   <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Booking</th>
+                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Source</th>
                   <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Customer</th>
                   <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Room</th>
                   <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Dates</th>
@@ -365,6 +485,7 @@ export default function OnlineBookingsPage() {
                   bookings.map((booking) => (
                     <tr key={booking.id} onClick={() => setSelectedBooking(booking)} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors cursor-pointer">
                       <td className="px-6 py-4 font-medium text-brand-600 dark:text-brand-400">{booking.bookingCode}</td>
+                      <td className="px-6 py-4"><SourceBadge source={booking.source} /></td>
                       <td className="px-6 py-4">
                         <div className="font-medium text-gray-900 dark:text-white">{booking.customer.fullname}</div>
                         <div className="text-xs text-gray-500">{booking.customer.email}</div>
@@ -394,7 +515,7 @@ export default function OnlineBookingsPage() {
         {!isLoading && !error && (
           <div className="px-6 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
             <div>
-              Showing {bookings.length} of {totalItems} bookings
+            Showing {bookings.length} of {totalItems} bookings
             </div>
             {totalPages > 1 && (
               <div className="flex gap-2">
