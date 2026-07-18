@@ -5,6 +5,10 @@ import {
   useOnlineBookingsQuery,
   useUpdateBookingMutation,
 } from "../../../../services/bookingsApi";
+import { 
+  useBookingPaymentsQuery, 
+  useRecordPaymentMutation 
+} from "../../../../services/paymentsApi";
 import { useRoomsQuery } from "../../../../services/roomsApi";
 import DatePicker from "@/components/form/date-picker";
 
@@ -95,6 +99,119 @@ function StatusActions({ booking, onAction }: { booking: Booking; onAction: (sta
       )}
       {s === "CHECKED_IN" && (
         <button onClick={() => onAction("CHECKED_OUT")} className="px-2.5 py-1 text-[11px] font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors">Check Out</button>
+      )}
+    </div>
+  );
+}
+
+// ── Booking Payments Section ─────────────────────────────────────
+function BookingPaymentsSection({ booking }: { booking: Booking }) {
+  const { data, isLoading } = useBookingPaymentsQuery(booking.id);
+  const recordMutation = useRecordPaymentMutation();
+  const [showForm, setShowForm] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState("CASH");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleRecord = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) return;
+    setIsSubmitting(true);
+    recordMutation.mutate(
+      { bookingId: booking.id, amount: Number(amount), method },
+      {
+        onSuccess: () => {
+          setShowForm(false);
+          setAmount("");
+          setIsSubmitting(false);
+        },
+        onError: () => setIsSubmitting(false),
+      }
+    );
+  };
+
+  if (isLoading) return <div className="text-sm text-gray-500">Loading payments...</div>;
+
+  const payments = data?.booking?.payments || [];
+  const paid = data?.paid || 0;
+  const outstanding = data?.outstanding || 0;
+
+  return (
+    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Payments</h4>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400"
+        >
+          {showForm ? "Cancel" : "+ Add Payment"}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <p className="text-[11px] text-gray-400 uppercase">Paid</p>
+          <p className="text-sm font-bold text-green-600">${paid}</p>
+        </div>
+        <div>
+          <p className="text-[11px] text-gray-400 uppercase">Outstanding</p>
+          <p className="text-sm font-bold text-red-500">${outstanding}</p>
+        </div>
+      </div>
+
+      {showForm && (
+        <form onSubmit={handleRecord} className="mb-4 space-y-3 bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Amount ($)</label>
+            <input
+              type="number"
+              step="0.01"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Method</label>
+            <select
+              value={method}
+              onChange={(e) => setMethod(e.target.value)}
+              className="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent"
+            >
+              <option value="CASH">Cash</option>
+              <option value="CARD">Card</option>
+              <option value="BANK_TRANSFER">Bank Transfer</option>
+            </select>
+          </div>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full py-2 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg disabled:opacity-50"
+          >
+            {isSubmitting ? "Saving..." : "Record Payment"}
+          </button>
+        </form>
+      )}
+
+      {payments.length > 0 ? (
+        <div className="space-y-2">
+          {payments.map((p: any) => (
+            <div key={p.id} className="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">${p.amount}</p>
+                <p className="text-[10px] text-gray-500">{p.method.replace("_", " ")} • {new Date(p.createdAt).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${p.status === "SUCCESS" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-yellow-100 text-yellow-700"}`}>
+                  {p.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-gray-500 text-center py-2">No payments recorded yet.</p>
       )}
     </div>
   );
@@ -259,6 +376,9 @@ function BookingSlideOver({ booking, onClose, onAction, isUpdating }: { booking:
               <p className="text-sm text-gray-700 dark:text-gray-300">{booking.specialRequest}</p>
             </div>
           )}
+
+          {/* Payments Section */}
+          <BookingPaymentsSection booking={booking} />
 
           {/* Timeline */}
           <div>
