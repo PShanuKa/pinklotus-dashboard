@@ -181,10 +181,10 @@ export default function SettingsPage() {
         <div className="flex justify-end pt-4">
           <button
             type="submit"
-            disabled={updateMutation.isPending}
-            className="px-6 py-3 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl disabled:opacity-50 transition-colors"
+            disabled={true} // Disabled per user request
+            className="px-6 py-3 text-sm font-semibold text-white bg-gray-400 cursor-not-allowed rounded-xl transition-colors"
           >
-            {updateMutation.isPending ? "Saving..." : "Save Settings"}
+            Save Settings (Disabled)
           </button>
         </div>
       </form>

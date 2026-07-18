@@ -228,65 +228,115 @@ function BookingSlideOver({ booking, onClose, onAction, isUpdating }: { booking:
     const html = `
       <html>
         <head>
-          <title>Booking Receipt - ${booking.bookingCode}</title>
+          <title>Invoice - ${booking.bookingCode}</title>
           <style>
-            body { font-family: system-ui, -apple-system, sans-serif; padding: 20px; color: #333; max-width: 400px; margin: 0 auto; }
-            .header { text-align: center; margin-bottom: 20px; border-bottom: 1px dashed #ccc; padding-bottom: 10px; }
-            .header h1 { margin: 0; font-size: 20px; }
-            .header p { margin: 5px 0 0; color: #666; font-size: 12px; }
-            .row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
-            .row.total { font-weight: bold; font-size: 16px; border-top: 1px dashed #ccc; padding-top: 10px; margin-top: 10px; }
-            .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #888; }
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #333; max-width: 800px; margin: 0 auto; }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 2px solid #f3f4f6; padding-bottom: 20px; }
+            .header-left h1 { margin: 0; font-size: 28px; color: #ec4899; }
+            .header-left p { margin: 5px 0 0; color: #6b7280; font-size: 14px; }
+            .header-right { text-align: right; }
+            .header-right h2 { margin: 0; font-size: 24px; color: #111827; font-weight: 500; text-transform: uppercase; letter-spacing: 2px; }
+            .header-right p { margin: 5px 0 0; color: #6b7280; font-size: 14px; }
+            
+            .billing-info { display: flex; justify-content: space-between; margin-bottom: 40px; }
+            .billing-col h3 { font-size: 12px; text-transform: uppercase; color: #9ca3af; margin-bottom: 10px; letter-spacing: 1px; }
+            .billing-col p { margin: 0 0 5px; font-size: 14px; font-weight: 500; }
+            .billing-col p.light { color: #6b7280; font-weight: 400; }
+
+            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+            th { text-align: left; padding: 12px; background-color: #f9fafb; color: #4b5563; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; }
+            td { padding: 16px 12px; border-bottom: 1px solid #e5e7eb; font-size: 14px; color: #111827; }
+            .text-right { text-align: right; }
+            
+            .totals { width: 50%; float: right; margin-bottom: 40px; }
+            .totals-row { display: flex; justify-content: space-between; padding: 10px 12px; font-size: 14px; }
+            .totals-row.grand-total { font-weight: bold; font-size: 18px; border-top: 2px solid #111827; border-bottom: 2px solid #111827; margin-top: 10px; }
+            
+            .footer { clear: both; text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px; }
             @media print {
-              body { padding: 0; }
-              @page { margin: 0; size: auto; }
+              body { padding: 0; max-width: 100%; }
+              @page { margin: 0.5cm; size: A4; }
             }
           </style>
         </head>
         <body>
           <div class="header">
-            <h1>PinkLotus Hotel</h1>
-            <p>Booking Receipt</p>
-            <p style="font-family: monospace;">${booking.bookingCode}</p>
+            <div class="header-left">
+              <h1>PinkLotus</h1>
+              <p>123 Lotus Road, Colombo, Sri Lanka</p>
+              <p>info@pinklotus.com | +94 77 123 4567</p>
+            </div>
+            <div class="header-right">
+              <h2>INVOICE</h2>
+              <p><strong>#${booking.bookingCode}</strong></p>
+              <p>Date: ${new Date().toLocaleDateString()}</p>
+            </div>
           </div>
           
-          <div class="row">
-            <span>Customer:</span>
-            <span>${booking.customer.fullname}</span>
+          <div class="billing-info">
+            <div class="billing-col">
+              <h3>Billed To</h3>
+              <p>${booking.customer.fullname}</p>
+              <p class="light">${booking.customer.email}</p>
+              ${booking.customer.phone ? `<p class="light">${booking.customer.phone}</p>` : ''}
+            </div>
+            <div class="billing-col text-right">
+              <h3>Booking Details</h3>
+              <p class="light">Check-in: <strong>${new Date(booking.checkIn).toLocaleDateString()}</strong></p>
+              <p class="light">Check-out: <strong>${new Date(booking.checkOut).toLocaleDateString()}</strong></p>
+              <p class="light">Guests: <strong>${booking.guests}</strong></p>
+            </div>
           </div>
-          <div class="row">
-            <span>Room:</span>
-            <span>${booking.room.name}</span>
-          </div>
-          <div class="row">
-            <span>Check In:</span>
-            <span>${new Date(booking.checkIn).toLocaleDateString()}</span>
-          </div>
-          <div class="row">
-            <span>Check Out:</span>
-            <span>${new Date(booking.checkOut).toLocaleDateString()}</span>
-          </div>
-          <div class="row">
-            <span>Nights:</span>
-            <span>${nights}</span>
-          </div>
-          <div class="row">
-            <span>Guests:</span>
-            <span>${booking.guests}</span>
-          </div>
-          <div class="row">
-            <span>Status:</span>
-            <span>${booking.status.replace("_", " ")}</span>
-          </div>
-          
-          <div class="row total">
-            <span>Total Amount:</span>
-            <span>$${booking.totalAmount}</span>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th class="text-right">Nights</th>
+                <th class="text-right">Price/Night</th>
+                <th class="text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <strong>${booking.room.name}</strong><br/>
+                  <span style="color: #6b7280; font-size: 12px;">${new Date(booking.checkIn).toLocaleDateString()} to ${new Date(booking.checkOut).toLocaleDateString()}</span>
+                </td>
+                <td class="text-right">${nights}</td>
+                <td class="text-right">$${booking.room.pricePerNight}</td>
+                <td class="text-right">$${(nights * Number(booking.room.pricePerNight)).toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="totals">
+            <div class="totals-row">
+              <span>Subtotal:</span>
+              <span>$${(nights * Number(booking.room.pricePerNight)).toFixed(2)}</span>
+            </div>
+            ${Number(booking.discount) > 0 ? `
+            <div class="totals-row">
+              <span>Discount:</span>
+              <span>-$${booking.discount}</span>
+            </div>` : ''}
+            ${Number(booking.taxAmount) > 0 ? `
+            <div class="totals-row">
+              <span>Tax:</span>
+              <span>+$${booking.taxAmount}</span>
+            </div>` : ''}
+            <div class="totals-row grand-total">
+              <span>Total Amount:</span>
+              <span>$${booking.totalAmount}</span>
+            </div>
+            <div class="totals-row" style="color: #6b7280; font-size: 12px; justify-content: flex-end;">
+              <span><em>Status: ${booking.status.replace('_', ' ')}</em></span>
+            </div>
           </div>
           
           <div class="footer">
-            <p>Thank you for choosing PinkLotus!</p>
-            <p>${new Date().toLocaleString()}</p>
+            <p>Thank you for choosing PinkLotus Hotel for your stay.</p>
+            <p>If you have any questions about this invoice, please contact us at info@pinklotus.com</p>
           </div>
           
           <script>
@@ -310,10 +360,11 @@ function BookingSlideOver({ booking, onClose, onAction, isUpdating }: { booking:
             <p className="text-xs text-brand-500 font-mono">{booking.bookingCode}</p>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={handlePrint} className="p-2 text-gray-500 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-lg transition-colors" title="Print Receipt">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button onClick={handlePrint} className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-lg transition-colors" title="Generate Invoice">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
               </svg>
+              Invoice
             </button>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
           </div>

@@ -85,6 +85,25 @@ export const useUpdateBookingMutation = (options: any = {}) => {
   });
 };
 
+// ── Get Calendar Bookings ──────────────────────────────────────────────────
+export const useCalendarBookingsQuery = (
+  filters: { start?: string; end?: string } = {},
+  options: any = {}
+) => {
+  return useQuery({
+    queryKey: ["CalendarBookings", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters.start) params.append("start", filters.start);
+      if (filters.end) params.append("end", filters.end);
+
+      const response = await api.get(`/bookings/calendar?${params.toString()}`);
+      return response.data; // { success, bookings }
+    },
+    ...options,
+  });
+};
+
 // ── Delete Booking ────────────────────────────────────────────
 export const useDeleteBookingMutation = (options: any = {}) => {
   const queryClient = useQueryClient();
