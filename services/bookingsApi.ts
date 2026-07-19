@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // ── All Bookings (unified — source can be ONLINE, DASHBOARD, or ALL) ─
 export const useOnlineBookingsQuery = (
-  filters: { page?: number; limit?: number; search?: string; from?: string; to?: string; roomId?: string; status?: string; source?: string } = {},
+  filters: { page?: number; limit?: number; search?: string; from?: string; to?: string; roomId?: string; status?: string; source?: string; type?: string } = {},
   options: any = {}
 ) => {
   return useQuery({
@@ -17,11 +17,25 @@ export const useOnlineBookingsQuery = (
       if (filters.roomId) params.append("roomId", filters.roomId);
       if (filters.status && filters.status !== "ALL") params.append("status", filters.status);
       if (filters.source && filters.source !== "ALL") params.append("source", filters.source);
+      if (filters.type && filters.type !== "ALL") params.append("type", filters.type);
       
       const response = await api.get(`/bookings?${params.toString()}`);
       return response.data;
     },
     refetchInterval: 30000,
+    ...options,
+  });
+};
+
+// ── Single Booking ──────────────────────────────────────────────
+export const useBookingQuery = (id: string, options: any = {}) => {
+  return useQuery({
+    queryKey: ["Booking", id],
+    queryFn: async () => {
+      const response = await api.get(`/bookings/${id}`);
+      return response.data;
+    },
+    enabled: !!id,
     ...options,
   });
 };

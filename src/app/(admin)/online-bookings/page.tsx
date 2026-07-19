@@ -11,7 +11,7 @@ import {
 } from "../../../../services/paymentsApi";
 import { useRoomsQuery } from "../../../../services/roomsApi";
 import DatePicker from "@/components/form/date-picker";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 
 type BookingStatus = "PENDING" | "CONFIRMED" | "CHECKED_IN" | "CHECKED_OUT" | "CANCELLED" | "NO_SHOW";
@@ -21,7 +21,8 @@ type Booking = {
   id: string;
   bookingCode: string;
   customer: { id: string; fullname: string; email: string; phone?: string };
-  room: { id: string; name: string; roomNumber: string | null; pricePerNight: string };
+  room?: { id: string; name: string; roomNumber: string | null; pricePerNight: string };
+  apartment?: { id: string; name: string; slug: string; rooms?: any[] };
   checkIn: string;
   checkOut: string;
   guests: number;
@@ -483,13 +484,14 @@ function BookingSlideOver({ booking, onClose, onAction, isUpdating }: { booking:
 // ── Main Page Content ───────────────────────────────────────────────
 function OnlineBookingsContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const initialSearch = searchParams.get("search") || "";
 
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [search, setSearch] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [sourceFilter, setSourceFilter] = useState<string>("ALL");
+  const [typeFilter, setTypeFilter] = useState<string>("ALL");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [roomIdFilter, setRoomIdFilter] = useState("");
@@ -506,7 +508,7 @@ function OnlineBookingsContent() {
 
   React.useEffect(() => {
     setPage(1);
-  }, [statusFilter, sourceFilter, dateFrom, dateTo, roomIdFilter]);
+  }, [statusFilter, sourceFilter, typeFilter, dateFrom, dateTo, roomIdFilter]);
 
   const { data: roomsData } = useRoomsQuery();
   const { data, isLoading, error } = useOnlineBookingsQuery({
@@ -515,6 +517,7 @@ function OnlineBookingsContent() {
     search: debouncedSearch,
     status: statusFilter,
     source: sourceFilter,
+    type: typeFilter,
     from: dateFrom,
     to: dateTo,
     roomId: roomIdFilter,
@@ -526,7 +529,6 @@ function OnlineBookingsContent() {
     updateMutation.mutate({ id: bookingId, status: newStatus }, {
       onSuccess: () => {
         setToast({ message: `Booking updated to ${newStatus.replace("_", " ")}`, type: "success" });
-        setSelectedBooking(null);
       },
       onError: (err: any) => setToast({ message: err?.response?.data?.message || "Update failed", type: "error" }),
     });
@@ -598,6 +600,18 @@ function OnlineBookingsContent() {
             </select>
           </div>
 
+          <div className="w-40">
+            <select
+              className="w-full py-2 px-3 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 appearance-none"
+              value={typeFilter}
+              onChange={(e) => { setTypeFilter(e.target.value); }}
+            >
+              <option value="ALL">All Types</option>
+              <option value="ROOM">🛏️ Rooms Only</option>
+              <option value="APARTMENT">🏢 Apartments Only</option>
+            </select>
+          </div>
+
           <div className="w-48">
             <select
               className="w-full py-2 px-3 text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 appearance-none"
@@ -626,8 +640,8 @@ function OnlineBookingsContent() {
                 onChange={(_, dateStr) => setDateTo(dateStr as string)}
               />
             </div>
-            {(dateFrom || dateTo || roomIdFilter || search || sourceFilter !== "ALL") && (
-              <button onClick={() => { setDateFrom(""); setDateTo(""); setRoomIdFilter(""); setSearch(""); setSourceFilter("ALL"); }} className="text-xs text-brand-500 hover:underline">Clear</button>
+            {(dateFrom || dateTo || roomIdFilter || search || sourceFilter !== "ALL" || typeFilter !== "ALL") && (
+              <button onClick={() => { setDateFrom(""); setDateTo(""); setRoomIdFilter(""); setSearch(""); setSourceFilter("ALL"); setTypeFilter("ALL"); }} className="text-xs text-brand-500 hover:underline">Clear</button>
             )}
           </div>
         </div>
@@ -659,7 +673,7 @@ function OnlineBookingsContent() {
                   </tr>
                 ) : (
                   bookings.map((booking) => (
-                    <tr key={booking.id} onClick={() => setSelectedBooking(booking)} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors cursor-pointer">
+                    <tr key={booking.id} onClick={() => router.push(`/online-bookings/${booking.id}`)} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors cursor-pointer">
                       <td className="px-6 py-4 font-medium text-brand-600 dark:text-brand-400">{booking.bookingCode}</td>
                       <td className="px-6 py-4"><SourceBadge source={booking.source} /></td>
                       <td className="px-6 py-4">
@@ -667,7 +681,12 @@ function OnlineBookingsContent() {
                         <div className="text-xs text-gray-500">{booking.customer.email}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900 dark:text-white">{booking.room.name}</div>
+                        <div className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                          {booking.apartment ? booking.apartment.name : booking.room?.name}
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${booking.apartment ? "bg-purple-100 text-purple-700" : "bg-teal-100 text-teal-700"}`}>
+                            {booking.apartment ? "Apartment" : "Room"}
+                          </span>
+                        </div>
                         <div className="text-xs text-gray-500">{booking.guests} Guests</div>
                       </td>
                       <td className="px-6 py-4">
@@ -714,16 +733,6 @@ function OnlineBookingsContent() {
           </div>
         )}
       </div>
-
-      {/* Booking Detail Slide-over */}
-      {selectedBooking && (
-        <BookingSlideOver
-          booking={selectedBooking}
-          onClose={() => setSelectedBooking(null)}
-          onAction={(s) => handleStatusAction(selectedBooking.id, s)}
-          isUpdating={updateMutation.isPending}
-        />
-      )}
     </div>
   );
 }
