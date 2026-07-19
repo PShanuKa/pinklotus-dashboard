@@ -293,6 +293,14 @@ export default function BookingDetailPage() {
                   <div style="color: #6b7280; font-size: 12px; margin-top: 4px;">
                     ${booking.apartment ? 'Entire Apartment' : 'Private Room'}
                   </div>
+                  ${booking.apartment?.rooms ? `
+                    <div style="margin-top: 10px; font-size: 13px; color: #4b5563;">
+                      <strong>Included Rooms:</strong>
+                      <ul style="margin: 5px 0 0 20px; padding: 0;">
+                        ${booking.apartment.rooms.map(r => `<li>${r.name} (Max Guests: ${r.maxGuests || 2})</li>`).join('')}
+                      </ul>
+                    </div>
+                  ` : ''}
                 </td>
                 <td>${booking.guests}</td>
                 <td>${nights}</td>
